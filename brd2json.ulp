@@ -95,7 +95,7 @@ void AddRect(UL_RECTANGLE R, int L, int indent)
 	printf(" ] ]\n%s}\n",tab(indent));	
 }
 
-void AddPolyShape(UL_POLYSHAPE P, int L, int indent)
+void AddPolyShape(UL_POLYGON P, int L, int indent)
 {
 	int first = 1;
 
@@ -115,7 +115,7 @@ void AddPolyShape(UL_POLYSHAPE P, int L, int indent)
 	printf("%s}\n",tab(indent));
 }
 
-void AddPolyPour(UL_POLYPOUR P, int L, int indent, string net)
+void AddPolyPour(UL_POLYGON P, int L, int indent, string net)
 {
 	int firstpoly = 1;
 	int firstwire = 1;
@@ -188,6 +188,9 @@ board(B)
 	string lname="unnamed";
 	string layernames[];
 
+	// Workaround to force a ratsnest in Eagle prior to further processing (so polygon pours process correctly)
+	if(argc==1) exit("ratsnest; run brd2json.ulp returning");
+
 	B.layers(L)
 	{
 		if(strsub(L.name,0,1)=="$") supplylayers[L.number]=1;
@@ -216,9 +219,9 @@ board(B)
 		B.wires(W) AddWire(W,LAYER_DIMENSION,ilvl);
 		B.circles(C) AddCircle(C,LAYER_DIMENSION,ilvl);
 		B.holes(H) AddHole(H,LAYER_DIMENSION,ilvl);
-		B.elements(E) E.footprint.wires(W) AddWire(W,LAYER_DIMENSION,ilvl);
-		B.elements(E) E.footprint.circles(C) AddCircle(C,LAYER_DIMENSION,ilvl);
-		B.elements(E) E.footprint.holes(H) AddHole(H,LAYER_DIMENSION,ilvl);
+		B.elements(E) E.package.wires(W) AddWire(W,LAYER_DIMENSION,ilvl);
+		B.elements(E) E.package.circles(C) AddCircle(C,LAYER_DIMENSION,ilvl);
+		B.elements(E) E.package.holes(H) AddHole(H,LAYER_DIMENSION,ilvl);
 		printf(tab(--ilvl) + "],\n"); // end edges
 		
 		// drawings
@@ -242,13 +245,13 @@ board(B)
 			{
 				thisl=silk_layers[d+e];
 				B.wires(W) AddWire(W,thisl,ilvl);
-				B.polyShapes(P) AddPolyShape(P,thisl,ilvl);
+				B.polygons(P) AddPolyShape(P,thisl,ilvl);
 				B.rectangles(R) AddRect(R,thisl,ilvl);
 				B.circles(C) AddCircle(C,thisl,ilvl);
 				B.texts(T) T.wires(W) AddWire(W,thisl,ilvl);
 				B.elements(E) E.texts(T) T.wires(W) AddWire(W,thisl,ilvl);
-				B.elements(E) E.footprint.wires(W) AddWire(W,thisl,ilvl);
-				B.elements(E) E.footprint.texts(T) T.wires(W) AddWire(W,thisl,ilvl);
+				B.elements(E) E.package.wires(W) AddWire(W,thisl,ilvl);
+				B.elements(E) E.package.texts(T) T.wires(W) AddWire(W,thisl,ilvl);
 				//B.holes(H) AddHole(H,thisl);
 			}
 		}
@@ -392,10 +395,10 @@ board(B)
 		printf(tab(ilvl++) + "\"zones\": {\n");
 		printf(tab(ilvl++) + "\"F\": [\n");
 		firstentry = 1;
-		B.signals(S) S.polyPours(P) AddPolyPour(P,LAYER_TOP,ilvl,S.name);
+		B.signals(S) S.polygons(P) AddPolyPour(P,LAYER_TOP,ilvl,S.name);
 		printf(tab(--ilvl) + "],\n" + tab(ilvl++) + "\"B\": [\n");
 		firstentry = 1;
-		B.signals(S) S.polyPours(P) AddPolyPour(P,LAYER_BOTTOM,ilvl,S.name);
+		B.signals(S) S.polygons(P) AddPolyPour(P,LAYER_BOTTOM,ilvl,S.name);
 		printf(tab(--ilvl) + "]\n"); 
 		printf(tab(--ilvl) + "},\n");
 		
